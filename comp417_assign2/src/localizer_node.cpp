@@ -52,6 +52,7 @@ public:
   void robotImageCallback( const sensor_msgs::ImageConstPtr& robot_img )
   {
     // TODO: You must fill in the code here to implement an observation model for your localizer
+    //ROS_INFO( "Got image callback." );
   }
 
   // Function motionCommandCallback is a example of how to work with Aqua's motion commands (your view on the odometry).
@@ -75,7 +76,7 @@ public:
   //
   void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command )
   {
-
+    //ROS_INFO( "Got motion callback." );
     geometry_msgs::PoseStamped command = *motion_command;
     double target_roll, target_pitch, target_yaw;
     tf::Quaternion target_orientation;
@@ -90,7 +91,7 @@ public:
     // The remainder of this function is sample drawing code to plot your answer on the map image.
 
     // Comment the one following line to plot your whole trajectory without ground truth
-    localization_result_image = ground_truth_image.clone();
+    localization_result_image = ground_truth_image.clone(); // you either get a red line or a red point + bluie line. no superimposed paths
 
     int estimated_robo_image_x = localization_result_image.size().width/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.x;
     int estimated_robo_image_y = localization_result_image.size().height/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.y;
@@ -98,6 +99,7 @@ public:
     int estimated_heading_image_x = estimated_robo_image_x + HEADING_GRAPHIC_LENGTH * cos(-target_yaw);
     int estimated_heading_image_y = estimated_robo_image_y + HEADING_GRAPHIC_LENGTH * sin(-target_yaw);
 
+    ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
     cv::circle( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
     cv::line( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
   }
