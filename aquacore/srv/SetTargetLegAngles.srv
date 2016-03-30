@@ -1,0 +1,3 @@
+Header header ## putting a stamp on the request might be useful to enqueue sequences of commands
+float64[6] target_angles
+---

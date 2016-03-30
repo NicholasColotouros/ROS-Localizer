@@ -1,0 +1,9 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~min_window_entries" : \b [int] Minimum number of entries in temporal window needed to trigger filter output [disable: 0] min: 0, default: 10, max: 100
+- \b "~max_window_entries" : \b [int] Maximum number of entries allowed in temporal window [disable: 0] min: 0, default: 10, max: 100
+- \b "~window_size_sec" : \b [double] Size of temporal window (sec) [disable: 0] min: 0.0, default: 30.0, max: 100.0
+- \b "~max_diameter_cutoff_m" : \b [double] Threshold for maximum point-to-point distance allowed, to trigger filter output [disable: 0] min: 0.0, default: 10.0, max: 1000.0
+

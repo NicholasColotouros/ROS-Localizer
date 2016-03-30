@@ -1,0 +1,14 @@
+
+<launch>
+  <arg name="urdf_path" default="$(find aqua_description)/urdf/aqua.urdf.xacro"/>
+  <arg name="planar_mode" default="0"/> <!-- Set to 0 for full 3D swimming. Set to 1 for fixed depth, no roll, no pitch.-->
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(arg urdf_path)' planar_mode:=$(arg planar_mode)"/>
+  <!-- param name="robot_description" command="$(find xacro)/xacro.py '$(find aquamodel)/urdf/aqua.urdf.xacro'"/ -->
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="publish_frequency" type="double" value="50.0" />
+  </node>
+  
+</launch>

@@ -1,0 +1,7 @@
+<launch>
+
+<include file="$(find aquaautopilot)/launch/auto.launch"/>
+<node name="hover_midoff" pkg="aqua_gait" type="hover_midoff_node"/>
+<node name="aqua_key_3d" pkg="aquajoy" type="aqua_key3D"/>
+
+</launch>

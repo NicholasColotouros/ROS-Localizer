@@ -1,0 +1,36 @@
+<package>
+  <name>aquaautopilot</name>
+  <description>
+     aquaautopilot
+  </description>
+  <version>0.0.1</version>
+  <author>David Meger</author>
+  <maintainer email="david.meger@gmail.com">David Meger</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/aquaautopilot</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>dynamic_reconfigure</build_depend>  
+  <build_depend>message_generation</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>aquacore</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>ar_recog</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+
+  <run_depend>message_runtime</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>aquacore</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>ar_recog</run_depend>
+
+</package>

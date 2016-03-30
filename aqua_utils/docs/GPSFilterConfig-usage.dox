@@ -1,0 +1,10 @@
+\subsubsection usage Usage
+\verbatim
+<node name="gps_filter" pkg="aqua_utils" type="gps_filter">
+  <param name="min_window_entries" type="int" value="10" />
+  <param name="max_window_entries" type="int" value="10" />
+  <param name="window_size_sec" type="double" value="30.0" />
+  <param name="max_diameter_cutoff_m" type="double" value="10.0" />
+</node>
+\endverbatim
+

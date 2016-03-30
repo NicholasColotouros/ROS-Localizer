@@ -1,0 +1,22 @@
+\subsubsection usage Usage
+\verbatim
+<node name="aqua_joy" pkg="aquajoy" type="aqua_joy">
+  <param name="joy_axis_deadzone" type="double" value="0.15" />
+  <param name="max_speed_cmd" type="double" value="1.0" />
+  <param name="max_heave_cmd" type="double" value="1.0" />
+  <param name="max_roll_cmd" type="double" value="1.0" />
+  <param name="max_pitch_cmd" type="double" value="1.0" />
+  <param name="max_yaw_cmd" type="double" value="1.0" />
+  <param name="max_roll_pos" type="double" value="90.0" />
+  <param name="max_pitch_pos" type="double" value="90.0" />
+  <param name="max_yaw_pos" type="double" value="180.0" />
+  <param name="min_depth" type="double" value="0.0" />
+  <param name="max_depth" type="double" value="100.0" />
+  <param name="default_fixed_depth" type="double" value="-1.0" />
+  <param name="max_roll_vel" type="double" value="450.0" />
+  <param name="max_pitch_vel" type="double" value="450.0" />
+  <param name="max_yaw_vel" type="double" value="900.0" />
+  <param name="max_depth_vel" type="double" value="3.0" />
+</node>
+\endverbatim
+

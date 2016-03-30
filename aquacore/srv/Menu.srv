@@ -1,0 +1,11 @@
+#optional menu title. it empty, it is ignored
+string title
+#option strings
+string[] opts
+#timeout in seconds, 0=> no timeout
+int32 timeout
+#defualt selection returned if timed out
+int32 default_choice
+---
+int32 selection
+

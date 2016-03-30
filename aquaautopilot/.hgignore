@@ -1,0 +1,6 @@
+^src/aquaautopilot/
+.cfgc$
+^docs/
+^cfg/cpp/
+^build/
+^bin/

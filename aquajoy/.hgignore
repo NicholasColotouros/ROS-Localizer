@@ -1,0 +1,8 @@
+^src/aquajoy/
+.cfgc$
+^docs/
+^cfg/cpp/
+^build/
+^bin/
+^msg_gen/
+^srv_gen/

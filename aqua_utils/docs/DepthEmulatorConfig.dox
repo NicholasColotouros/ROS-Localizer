@@ -1,0 +1,9 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~pub_rate" : \b [double] State message publish rate min: 0.0, default: 20.0, max: 100.0
+- \b "~target_depth" : \b [double] Target depth (m) min: 0.0, default: 0.0, max: 50.0
+- \b "~stdev_depth" : \b [double] Gaussian standard deviation for depth (m) min: 0.0, default: 0.03, max: 10.0
+- \b "~speed_mps" : \b [double] Emulated heave speed (m/s) min: 0.01, default: 0.1, max: 1000.0
+

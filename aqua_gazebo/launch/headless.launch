@@ -1,0 +1,19 @@
+<launch>
+
+  <arg name="planar_mode" default="0"/> <!-- Set to 0 for full 3D swimming. Set to 1 for fixed depth, no roll, no pitch.-->
+
+  <param name="use_sim_time" value="true"/>
+
+  <include file="$(find aqua_description)/launch/aqua_description.launch">
+    <arg name="urdf_path" value="$(find aqua_gazebo)/urdf/aqua_gazebo.urdf.xacro"/>
+    <arg name="planar_mode" value="$(arg planar_mode)"/>
+  </include>
+
+  <include file="$(find aqua_gazebo)/launch/aqua_world.launch">
+    <arg name="world_name" value="$(find aqua_gazebo)/worlds/aqua.world"/>
+    <arg name="gui" value="false"/>
+  </include>
+
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-z -5.0 -param robot_description -urdf -model aqua"/>
+  
+</launch>

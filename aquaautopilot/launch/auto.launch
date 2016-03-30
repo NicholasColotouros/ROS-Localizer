@@ -1,0 +1,54 @@
+<launch>
+
+<arg name="duration" default="30"/>
+
+<arg name="RP" default="0.55"/>
+<arg name="RD" default="0.0"/>
+<arg name="RCONST" default="0.0"/>
+
+<arg name="PP" default="1.5"/>
+<arg name="PD" default="0.0"/>
+
+<arg name="YP" default="-2.5"/>
+<arg name="YI" default="0.0"/>
+<arg name="YD" default="0.0"/>
+
+<arg name="DP" default="-1.2"/>
+<arg name="DD" default="0.0"/>
+
+<arg name="display_output" default="false"/>
+<arg name="use_robot_frame_depth" default="true"/>
+
+<!-- Never ever forget to copy the logger -->
+<!--include file="$(find aquaautopilot)/launch/logger.launch"/-->
+
+<!-- A depth_filter specific to the AP -->
+<node pkg="aqua_utils" type="depth_filter" name="AP_depth_filter">
+    <remap from="/aqua/filtered_depth" to="/AP_filtered_depth"/>
+</node>
+
+<!--The autopilot node with gains copied from the MRL Wiki --> 
+  <node pkg="aquaautopilot" type="local_autopilot_node" name="localAP">
+
+         <remap from="/aqua/filtered_depth" to="/AP_filtered_depth"/>
+
+         <param name="ROLL_P_GAIN" value="$(arg RP)"/>
+         <param name="PITCH_P_GAIN" value="$(arg PP)"/>
+         <param name="YAW_P_GAIN" value="$(arg YP)"/>
+         
+         <param name="YAW_I_GAIN" value="$(arg YI)"/>
+        
+         <param name="ROLL_D_GAIN" value="$(arg RD)"/>
+         <param name="PITCH_D_GAIN" value="$(arg PD)"/>
+         <param name="YAW_D_GAIN" value="$(arg YD)"/>
+         
+         <param name="ROLL_CONST_GAIN" value="$(arg RCONST)"/>
+        
+         <param name="KDEPTH"    value="$(arg DP)" />
+         <param name="DEPTH_D_GAIN" value="$(arg DD)" />
+         <param name="DEPTH_D_FILTER_PERIOD" value="0.6" />
+         
+         <param name="display_output" value="$(arg display_output)" />
+         <param name="use_robot_frame_depth" value="$(arg use_robot_frame_depth)" />
+  </node>
+</launch>

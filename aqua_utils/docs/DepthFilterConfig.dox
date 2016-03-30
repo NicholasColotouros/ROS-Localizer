@@ -1,0 +1,9 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~min_window_entries" : \b [int] Minimum number of entries in temporal window needed to trigger filter output min: 0, default: 4, max: 100
+- \b "~window_size_sec" : \b [double] Size of temporal window (sec) min: 0.0, default: 2.0, max: 10.0
+- \b "~cutoff_sigma_multiplier" : \b [double] Number of standard deviations used in depth cutoff min: 0.0, default: 3.0, max: 5.0
+- \b "~N_sigma_cutoff_m" : \b [double] Depth cutoff threshold (m) min: 0.0, default: 0.15, max: 1.0
+

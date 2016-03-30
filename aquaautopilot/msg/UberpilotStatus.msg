@@ -1,0 +1,58 @@
+float64 roll_p_gain
+float64 pitch_p_gain
+float64 yaw_p_gain
+float64 roll_i_gain
+float64 pitch_i_gain
+float64 yaw_i_gain
+float64 roll_d_gain
+float64 pitch_d_gain
+float64 yaw_d_gain
+float64 roll_const_gain
+
+float64 roll_error
+float64 pitch_error
+float64 yaw_error
+float64 depth_error
+
+float64 roll_error_integral
+float64 pitch_error_integral
+float64 yaw_error_integral
+
+float64 roll_p_contrib
+float64 pitch_p_contrib
+float64 yaw_p_contrib
+float64 roll_i_contrib
+float64 pitch_i_contrib
+float64 yaw_i_contrib
+float64 roll_d_contrib
+float64 pitch_d_contrib
+float64 yaw_d_contrib
+float64 roll_const_contrib
+
+float64 depth_p_gain
+float64 depth_d_gain
+float64 depth_derivative
+float64 depth_p_contrib
+float64 depth_d_contrib
+
+float64 resultant_roll
+float64 resultant_pitch
+float64 resultant_yaw
+
+float64 filtered_depth_derivative
+float64 depth_d_filter_period
+
+float64 filtered_roll_deriv
+float64 filtered_pitch_deriv
+float64 filtered_yaw_deriv
+float64 roll_d_filter_period
+float64 pitch_d_filter_period
+float64 yaw_d_filter_period
+
+float64 roll_target
+float64 pitch_target
+float64 yaw_target
+
+float64 current_roll
+float64 current_pitch
+float64 current_yaw

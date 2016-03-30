@@ -1,0 +1,25 @@
+# Desired goal
+
+# (x,y) denotes latitude and longitude respectively (in degrees)
+# z denotes depth, > 0 above the water, 0 on the surface, < 0 underwater (in meters)
+# orientation is currently not handled 
+geometry_msgs/Pose target_waypoint
+
+# True if we want to avoid a random step to initialize the global heading of the robot 
+# and instead use the last known heading from the previous goal. 
+# This is useful when we have a chain of goals to reach, one after the other, because
+# it avoids ugly turns in the beginning of the trajectory towards the next goal..
+bool   start_towards_last_bearing 
+---
+
+# Result
+
+bool arrived_successfully
+
+---
+
+# Feedback 
+
+# Current position and orientation. 
+# Semantics as above.
+geometry_msgs/Pose current_waypoint

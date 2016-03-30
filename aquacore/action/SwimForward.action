@@ -1,0 +1,17 @@
+# BIG WARNING!!! It is potentially misleading that at the beginning the robot will turn
+#                to the target yaw, and then swim straight from that point onwards.  
+
+# Desired Goal
+float64 duration     # in s
+float64 speed        # in pseudo-unit-rate
+float32 target_depth # in m; set to -1 to use robot's current depth
+float32 target_yaw   # in deg; set to 361 to use robot's current yaw
+
+---
+
+# Result
+
+---
+
+# Feedback
+float64 percent_time_completed

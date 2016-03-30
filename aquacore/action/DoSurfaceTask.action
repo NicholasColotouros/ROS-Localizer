@@ -1,0 +1,15 @@
+# Desired Goal
+byte task                                # see SurfaceTaskTypes.msg
+float64 ascend_speed                     # in m/s (using depth autopilot) or pseudo-unit-rate (using angles autopilot)
+
+---
+
+# Result
+
+---
+
+# Feedback
+byte task                                # see SurfaceTaskTypes.msg
+float64 percent_depth_change_completed
+bool has_reached_constant_depth
+bool has_established_gps

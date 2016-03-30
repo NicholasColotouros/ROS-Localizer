@@ -1,0 +1,16 @@
+syntax: glob
+*.orig
+*.rej
+*~
+*.o
+bin/*
+build/*
+.*
+
+syntax: regexp
+.*\#.*\#$
+src/aqua_utils/
+docs/
+cfg/cpp/
+.cfgc$
+cmake_install.cmake

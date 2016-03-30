@@ -1,0 +1,10 @@
+\subsubsection usage Usage
+\verbatim
+<node name="depth_emulator" pkg="aqua_utils" type="depth_emulator">
+  <param name="pub_rate" type="double" value="20.0" />
+  <param name="target_depth" type="double" value="0.0" />
+  <param name="stdev_depth" type="double" value="0.03" />
+  <param name="speed_mps" type="double" value="0.1" />
+</node>
+\endverbatim
+

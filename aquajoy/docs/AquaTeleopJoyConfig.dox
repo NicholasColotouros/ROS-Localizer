@@ -1,0 +1,21 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~joy_axis_deadzone" : \b [double] Deadzone range on individual joypad analog axes min: 0.0, default: 0.15, max: 1.0
+- \b "~max_speed_cmd" : \b [double] Maximum speed command magnitude [for all modes] min: 0.0, default: 1.0, max: 1.0
+- \b "~max_heave_cmd" : \b [double] Maximum heave command magnitude [for non-depth-reg. modes] min: 0.0, default: 1.0, max: 1.0
+- \b "~max_roll_cmd" : \b [double] Maximum roll command magnitude [for non-AP mode] min: 0.0, default: 1.0, max: 1.0
+- \b "~max_pitch_cmd" : \b [double] Maximum pitch command magnitude [for non-AP mode] min: 0.0, default: 1.0, max: 1.0
+- \b "~max_yaw_cmd" : \b [double] Maximum yaw command magnitude [for non-AP mode] min: 0.0, default: 1.0, max: 1.0
+- \b "~max_roll_pos" : \b [double] Analog stick to roll position ratio (deg) [for AP-pos. modes] min: -180.0, default: 90.0, max: 180.0
+- \b "~max_pitch_pos" : \b [double] Analog stick to pitch position ratio (deg) [for AP-pos. modes] min: -180.0, default: 90.0, max: 180.0
+- \b "~max_yaw_pos" : \b [double] Analog stick to yaw position ratio (deg) [UNUSED] min: -180.0, default: 180.0, max: 180.0
+- \b "~min_depth" : \b [double] Minimum depth (m) [for AP-depth-reg. modes] min: -2.0, default: 0.0, max: 1.0
+- \b "~max_depth" : \b [double] Maximum depth (m) [for AP-depth-reg. modes] min: 0.0, default: 100.0, max: 100.0
+- \b "~default_fixed_depth" : \b [double] Use fixed initial depth upon entering depth-related modes [if < 0, then initial depth is current robot depth] min: -1.0, default: -1.0, max: 10.0
+- \b "~max_roll_vel" : \b [double] Analog stick to roll velocity ratio (deg/s) [for AP-pos. modes] min: -1800.0, default: 450.0, max: 1800.0
+- \b "~max_pitch_vel" : \b [double] Analog stick to pitch velocity ratio (deg/s) [for AP-pos. modes] min: -1800.0, default: 450.0, max: 1800.0
+- \b "~max_yaw_vel" : \b [double] Analog stick to yaw velocity ratio (deg/s) [for AP-pos. modes] min: -1800.0, default: 900.0, max: 1800.0
+- \b "~max_depth_vel" : \b [double] Analog stick to depth velocity ratio (m/s) [for AP-pos. modes] min: -10.0, default: 3.0, max: 10.0
+

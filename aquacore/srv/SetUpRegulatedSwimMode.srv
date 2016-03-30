@@ -1,0 +1,4 @@
+float32 target_yaw   # in degrees
+float32 target_depth # in m
+
+---

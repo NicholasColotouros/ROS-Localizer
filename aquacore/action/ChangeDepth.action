@@ -1,0 +1,12 @@
+# Desired Goal
+float32 depth # in m (be weary of depth sensor's constant depth offset)
+float64 speed # in m/s (using depth autopilot) or pseudo-unit-rate (using angles autopilot)
+
+---
+
+# Result
+
+---
+
+# Feedback
+float64 percent_depth_change_completed

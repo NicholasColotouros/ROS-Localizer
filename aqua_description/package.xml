@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <name>aqua_description</name>
+  <version>0.0.1</version>
+  <description>
+    This package contains the STL model for the AQUA robot, the urdf.xacro xml/script file to load it in gazebo, and a simple leg state publisher.
+  </description>
+  <maintainer email="dmeger@cim.mcgill.ca">Dave Meger</maintainer>
+  <license>BSD</license>
+  <author email="dmeger@cim.mcgill.ca">Dave Meger</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>xacro</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>aquacore</build_depend>
+  
+  <run_depend>roscpp</run_depend>
+  <run_depend>xacro</run_depend>
+  <run_depend>urdf</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>aquacore</run_depend>
+</package>

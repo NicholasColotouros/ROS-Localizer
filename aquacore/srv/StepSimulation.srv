@@ -1,0 +1,10 @@
+float64 duration
+---
+time timestamp
+float64[6] frequencies
+float64[6] amplitudes
+float64[6] leg_offsets
+float64[6] phase_offsets
+float64[6] joint_angles
+sensor_msgs/Imu imu_data
+float64[3] integrated_velocity

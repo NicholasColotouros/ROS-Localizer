@@ -1,0 +1,12 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~pub_rate" : \b [double] GPS message publish rate min: 0.0, default: 1.0, max: 10.0
+- \b "~pub_probability" : \b [double] Probability of publishing next GPS message min: 0.0, default: 0.8, max: 1.0
+- \b "~target_latitude" : \b [double] Target latitude (deg) min: -90.0, default: 13.1931, max: 90.0
+- \b "~target_longitude" : \b [double] Target longitude (deg) min: -180.0, default: -59.6415, max: 180.0
+- \b "~stdev_latitude_m" : \b [double] Gaussian standard deviation for latitude (pseudo-m converting to deg) min: 0.0, default: 2.0, max: 20.0
+- \b "~stdev_longitude_m" : \b [double] Gaussian standard deviation for longitude (pseudo-m converting to deg) min: 0.0, default: 2.0, max: 20.0
+- \b "~speed_mps" : \b [double] Emulated movement speed (pseudo-m/s) min: 0.01, default: 1.0, max: 1000000.0
+

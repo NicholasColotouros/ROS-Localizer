@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="aqua">
+   <xacro:include filename="$(find aqua_description)/urdf/aqua.urdf.xacro" />
+   <xacro:include filename="$(find aqua_gazebo)/urdf/aqua_plugins.urdf.xacro" />
+</robot>
