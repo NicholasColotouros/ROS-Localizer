@@ -5,10 +5,17 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_listener.h>
 
+#include <cmath>
+
+// Provided constants
 #define METRE_TO_PIXEL_SCALE 50
 #define FORWARD_SWIM_SPEED_SCALING 0.1
 #define POSITION_GRAPHIC_RADIUS 20.0
 #define HEADING_GRAPHIC_LENGTH 50.0
+
+// My constants
+#define NUM_PARTICLES 2000
+#define RGB_DISTANCE 1
 
 // Class Localizer is a sample stub that you can build upon for your implementation
 // (advised but optional: starting from scratch is also fine)
@@ -16,6 +23,15 @@
 class Localizer
 {
 public:
+  struct Particle
+  {
+    double x;
+    double y;
+    double theta;
+    double weight;
+  };
+
+  Particle Particles[NUM_PARTICLES];
   ros::NodeHandle nh;
   image_transport::Publisher pub;
   image_transport::Subscriber gt_img_sub;
@@ -49,10 +65,46 @@ public:
 
   }
 
+  void draw_point(int x, int y)
+  {
+    int estimated_robo_image_x = localization_result_image.size().width/2 + METRE_TO_PIXEL_SCALE * x;
+    int estimated_robo_image_y = localization_result_image.size().height/2 + METRE_TO_PIXEL_SCALE * x;
+
+    // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
+    double radius = 5.0;
+    cv::circle(localization_result_image, cv::Point(x, y), radius, CV_RGB(0,250,0), -1);
+  }
+
+  // Compare two pixels by returning the distance from the rgb
+  double comparePixels( const cv::Vec3b A, const cv::Vec3b B )
+  {
+    return pow(A[0]-B[0], 2) + pow(A[1]-B[1], 2) + pow(A[2]-B[2], 2);
+  }
+
   void robotImageCallback( const sensor_msgs::ImageConstPtr& robot_img )
   {
     // TODO: You must fill in the code here to implement an observation model for your localizer
     //ROS_INFO( "Got image callback." );
+    cv::Mat rgb_img = cv_bridge::toCvShare(robot_img, "bgr8")->image;
+    int rows = rgb_img.rows;
+    int cols = rgb_img.cols;
+    cv::Vec3b centerPixelRobo = rgb_img.at<cv::Vec3b>(rows/2,cols/2);
+
+    // Find all "close enough" points
+     for(int x = 0; x < map_image.rows; x++)
+     {
+       for(int y = 0; y < map_image.cols; y++)
+       {
+         cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(x,y);
+         if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
+         {
+           printf("%d, %d\n", x,y);
+           draw_point(x, y);
+         }
+       }
+     }
+     cv::imwrite( "top.jpg", localization_result_image );
+     exit(0);
   }
 
   // Function motionCommandCallback is a example of how to work with Aqua's motion commands (your view on the odometry).
@@ -99,7 +151,7 @@ public:
     int estimated_heading_image_x = estimated_robo_image_x + HEADING_GRAPHIC_LENGTH * cos(-target_yaw);
     int estimated_heading_image_y = estimated_robo_image_y + HEADING_GRAPHIC_LENGTH * sin(-target_yaw);
 
-    ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
+    // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
     cv::circle( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
     cv::line( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
   }
