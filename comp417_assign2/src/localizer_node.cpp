@@ -67,10 +67,6 @@ public:
 
   void draw_point(int x, int y)
   {
-    int estimated_robo_image_x = localization_result_image.size().width/2 + METRE_TO_PIXEL_SCALE * x;
-    int estimated_robo_image_y = localization_result_image.size().height/2 + METRE_TO_PIXEL_SCALE * x;
-
-    // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
     double radius = 5.0;
     cv::circle(localization_result_image, cv::Point(x, y), radius, CV_RGB(0,250,0), -1);
   }
@@ -91,20 +87,17 @@ public:
     cv::Vec3b centerPixelRobo = rgb_img.at<cv::Vec3b>(rows/2,cols/2);
 
     // Find all "close enough" points
-     for(int x = 0; x < map_image.rows; x++)
+     for(int x = 0; x < map_image.cols; x++)
      {
-       for(int y = 0; y < map_image.cols; y++)
+       for(int y = 0; y < map_image.rows; y++)
        {
          cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(x,y);
          if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
          {
-           printf("%d, %d\n", x,y);
            draw_point(x, y);
          }
        }
      }
-     cv::imwrite( "top.jpg", localization_result_image );
-     exit(0);
   }
 
   // Function motionCommandCallback is a example of how to work with Aqua's motion commands (your view on the odometry).
