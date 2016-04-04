@@ -31,15 +31,15 @@ public:
     drawing_image = map_image.clone();
 
     ground_truth_sub = nh.subscribe<gazebo_msgs::ModelStates>("/gazebo/model_states", 1, &GroundTruthPublisher::groundTruthCallback, this);
-   
+
     ROS_INFO( "Ground truth publisher constructed. Waiting for model state information." );
 
   }
 
   void groundTruthCallback( const gazebo_msgs::ModelStates::ConstPtr& ground_truth_state )
   {
-    ROS_INFO( "Got ground truth callback." ); 
-   
+    ROS_INFO( "Got ground truth callback." );
+
     std::string robot_name = "aqua";
 
     int index = -1;

@@ -30,21 +30,23 @@ public:
     double theta;
     double weight;
   };
+  std::vector<Particle*> Particles;
 
-  Particle Particles[NUM_PARTICLES];
   ros::NodeHandle nh;
   image_transport::Publisher pub;
   image_transport::Subscriber gt_img_sub;
   image_transport::Subscriber robot_img_sub;
 
   ros::Subscriber motion_command_sub;
-
   geometry_msgs::PoseStamped estimated_location;
 
   cv::Mat map_image;
   cv::Mat current_camera_image;
   cv::Mat ground_truth_image;
   cv::Mat localization_result_image;
+  cv::Mat localization_line_image; // Used so that we can refresh the particles each frame
+
+
 
   Localizer( int argc, char** argv )
   {
@@ -52,24 +54,52 @@ public:
     pub = it.advertise("/assign2/localization_result_image", 1);
     map_image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
+    localization_result_image = map_image.clone();
+    localization_line_image = map_image.clone();
+    ground_truth_image = map_image.clone();
+
     estimated_location.pose.position.x = 0;
     estimated_location.pose.position.y = 0;
 
-    localization_result_image = map_image.clone();
-    ground_truth_image = map_image.clone();
 
     gt_img_sub = it.subscribe("/assign2/ground_truth_image", 1, &Localizer::groundTruthImageCallback, this);
     robot_img_sub = it.subscribe("/aqua/back_down/image_raw", 1, &Localizer::robotImageCallback, this);
     motion_command_sub = nh.subscribe<geometry_msgs::PoseStamped>("/aqua/target_pose", 1, &Localizer::motionCommandCallback, this);
 
-    ROS_INFO( "localizer node constructed and subscribed." );
-
+    ROS_INFO("localizer node constructed and subscribed.");
   }
 
+  // Draws a point in green with radius 5
   void draw_point(int x, int y)
   {
     double radius = 5.0;
     cv::circle(localization_result_image, cv::Point(x, y), radius, CV_RGB(0,250,0), -1);
+  }
+
+  // duplicates the line image and draws the particles on the published image
+  void draw_particles()
+  {
+    localization_result_image = localization_line_image.clone();
+    for(int i = 0; i < NUM_PARTICLES; i++)
+    {
+      //draw_point(Particles[i].x, Particles[i].y);
+    }
+  }
+
+  // Returns the x pixel coordinate adjusted for the length of the camera according to the provided yaw
+  // x_pixels: the x location of the camera center, in pixels
+  // returns: the x location of the center of the robot in pixels
+  int adjust_x_meters(double x_pixels, double yaw)
+  {
+    return x_pixels + std::roundl(METRE_TO_PIXEL_SCALE * cos( yaw ) * -0.32);
+  }
+
+  // Returns the y pixel coordinate adjusted for the length of the camera according to the provided yaw
+  // y_pixels: the y location of the camera center, in pixels
+  // returns: the y location of the center of the robot in pixels
+  int adjust_y_meters(double y_pixels, double yaw)
+  {
+    return y_pixels + std::roundl(METRE_TO_PIXEL_SCALE * sin( -yaw ) * -0.32);
   }
 
   // Compare two pixels by returning the distance from the rgb
@@ -83,10 +113,12 @@ public:
   {
     // TODO: You must fill in the code here to implement an observation model for your localizer
     //ROS_INFO( "Got image callback." );
-    cv::Mat rgb_img = cv_bridge::toCvShare(robot_img, "bgr8")->image;
-    int rows = rgb_img.rows;
-    int cols = rgb_img.cols;
-    cv::Vec3b centerPixelRobo = rgb_img.at<cv::Vec3b>(rows/2,cols/2);
+    localization_result_image = localization_line_image.clone();
+
+    current_camera_image = cv_bridge::toCvShare(robot_img, "bgr8")->image;
+    int rows = current_camera_image.rows;
+    int cols = current_camera_image.cols;
+    cv::Vec3b centerPixelRobo = current_camera_image.at<cv::Vec3b>(rows/2,cols/2);
 
     // Find all "close enough" points
      for(int x = 0; x < map_image.cols; x++)
@@ -102,25 +134,6 @@ public:
      }
   }
 
-  // Function motionCommandCallback is a example of how to work with Aqua's motion commands (your view on the odometry).
-  // The initial version simply integrates the commands over time to make a very rough location estimate.
-  // TODO: You must improve it to work with the localizer you implement.
-  //
-  // Note the somewhat unique meaning of fields in motion_command
-  //    motion_command
-  //      pose
-  //        position
-  //          x - requested forward swim effort in a unitless number ranging from 0.0 to 1.0. You must translate this into
-  //              a velocity estimate in some way. Currently a simple constant is used.
-  //          y - requested up/down swim effort. Not used in this assignment
-  //          z - unused
-  //        orientation - A quaternion that represents the desired body orientation w.r.t. global frame. Note that
-  //                      Aqua's controller will not achieve this orientation perfectly, so you must consider that
-  //                      this is only a noisy estimate of the robot's orientation (correct for it with your filter!)
-  //
-  // Note that we use negative angles because the geometry of the map image is formed with its Z axis pointing downwards
-  // (the camera is looking at the ocean floor)
-  //
   void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command )
   {
     //ROS_INFO( "Got motion callback." );
@@ -137,18 +150,20 @@ public:
 
     // The remainder of this function is sample drawing code to plot your answer on the map image.
 
-    // Comment the one following line to plot your whole trajectory without ground truth
-    localization_result_image = ground_truth_image.clone(); // you either get a red line or a red point + bluie line. no superimposed paths
+    /*********************************************************/
+    // DRAW THE GROUND (BLUE) TRUTH AND OUR ESTIMATED (RED)  //
+    /*********************************************************/
+    localization_line_image = ground_truth_image.clone(); // you either get a red line or a red point + bluie line. no superimposed paths
 
-    int estimated_robo_image_x = localization_result_image.size().width/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.x;
-    int estimated_robo_image_y = localization_result_image.size().height/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.y;
+    int estimated_robo_image_x = localization_line_image.size().width/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.x;
+    int estimated_robo_image_y = localization_line_image.size().height/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.y;
 
     int estimated_heading_image_x = estimated_robo_image_x + HEADING_GRAPHIC_LENGTH * cos(-target_yaw);
     int estimated_heading_image_y = estimated_robo_image_y + HEADING_GRAPHIC_LENGTH * sin(-target_yaw);
 
     // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
-    //cv::circle( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
-    //cv::line( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
+    cv::circle( localization_line_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
+    cv::line( localization_line_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
   }
 
   // This is a provided convenience function that allows you to compare your localization result to a ground truth path
