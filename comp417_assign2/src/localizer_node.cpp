@@ -40,6 +40,8 @@ public:
 
   ros::Subscriber motion_command_sub;
   geometry_msgs::PoseStamped estimated_location;
+  int estimated_x_pixels;
+  int estimated_y_pixels;
 
   cv::Mat map_image;
   cv::Mat current_camera_image;
@@ -60,15 +62,24 @@ public:
     localization_line_image = map_image.clone();
     ground_truth_image = map_image.clone();
 
-    // position
+    // position in meters
     estimated_location.pose.position.x = 0;
     estimated_location.pose.position.y = 0;
 
+    estimated_x_pixels = adjust_x_meters(localization_line_image.size().width/2, 0);
+    estimated_y_pixels = adjust_y_meters(localization_line_image.size().height/2, 0);
+
+    // Initialize particles around the origin
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0.0,10.0);
+    std::normal_distribution<double> angle_distribution(0.0,0.26); //-15 to +15 degrees
     for(int i = 0; i < NUM_PARTICLES; i++)
     {
       particles.push_back(Particle());
-      particles[i].x = rand()%map_image.cols;
-      particles[i].y = rand()%map_image.rows;
+      particles[i].x = estimated_x_pixels + std::roundl(distribution(generator));
+      particles[i].y = estimated_y_pixels + std::roundl(distribution(generator));
+      particles[i].theta = angle_distribution(generator);
+      particles[i].weight = 1;
     }
 
     gt_img_sub = it.subscribe("/assign2/ground_truth_image", 1, &Localizer::groundTruthImageCallback, this);
