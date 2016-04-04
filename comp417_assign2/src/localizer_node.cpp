@@ -6,6 +6,7 @@
 #include <tf/transform_listener.h>
 
 #include <cmath>
+#include <stdlib.h>
 
 // Provided constants
 #define METRE_TO_PIXEL_SCALE 50
@@ -14,7 +15,7 @@
 #define HEADING_GRAPHIC_LENGTH 50.0
 
 // My constants
-#define NUM_PARTICLES 2000
+#define NUM_PARTICLES 25000
 #define RGB_DISTANCE 1
 
 // Class Localizer is a sample stub that you can build upon for your implementation
@@ -25,12 +26,12 @@ class Localizer
 public:
   struct Particle
   {
-    double x;
-    double y;
+    int x; // pixel measurements
+    int y;
     double theta;
     double weight;
   };
-  std::vector<Particle*> Particles;
+  std::vector<Particle> particles;
 
   ros::NodeHandle nh;
   image_transport::Publisher pub;
@@ -54,13 +55,21 @@ public:
     pub = it.advertise("/assign2/localization_result_image", 1);
     map_image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
+    // Initialize images
     localization_result_image = map_image.clone();
     localization_line_image = map_image.clone();
     ground_truth_image = map_image.clone();
 
+    // position
     estimated_location.pose.position.x = 0;
     estimated_location.pose.position.y = 0;
 
+    for(int i = 0; i < NUM_PARTICLES; i++)
+    {
+      particles.push_back(Particle());
+      particles[i].x = rand()%map_image.cols;
+      particles[i].y = rand()%map_image.rows;
+    }
 
     gt_img_sub = it.subscribe("/assign2/ground_truth_image", 1, &Localizer::groundTruthImageCallback, this);
     robot_img_sub = it.subscribe("/aqua/back_down/image_raw", 1, &Localizer::robotImageCallback, this);
@@ -82,7 +91,7 @@ public:
     localization_result_image = localization_line_image.clone();
     for(int i = 0; i < NUM_PARTICLES; i++)
     {
-      //draw_point(Particles[i].x, Particles[i].y);
+      draw_point(particles[i].x, particles[i].y);
     }
   }
 
@@ -113,25 +122,26 @@ public:
   {
     // TODO: You must fill in the code here to implement an observation model for your localizer
     //ROS_INFO( "Got image callback." );
-    localization_result_image = localization_line_image.clone();
-
-    current_camera_image = cv_bridge::toCvShare(robot_img, "bgr8")->image;
-    int rows = current_camera_image.rows;
-    int cols = current_camera_image.cols;
-    cv::Vec3b centerPixelRobo = current_camera_image.at<cv::Vec3b>(rows/2,cols/2);
-
-    // Find all "close enough" points
-     for(int x = 0; x < map_image.cols; x++)
-     {
-       for(int y = 0; y < map_image.rows; y++)
-       {
-         cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
-         if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
-         {
-           draw_point(x,y);
-         }
-       }
-     }
+    draw_particles();
+    // localization_result_image = localization_line_image.clone();
+    //
+    // current_camera_image = cv_bridge::toCvShare(robot_img, "bgr8")->image;
+    // int rows = current_camera_image.rows;
+    // int cols = current_camera_image.cols;
+    // cv::Vec3b centerPixelRobo = current_camera_image.at<cv::Vec3b>(rows/2,cols/2);
+    //
+    // // Find all "close enough" points
+    //  for(int x = 0; x < map_image.cols; x++)
+    //  {
+    //    for(int y = 0; y < map_image.rows; y++)
+    //    {
+    //      cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
+    //      if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
+    //      {
+    //        draw_point(x,y);
+    //      }
+    //    }
+    //  }
   }
 
   void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command )
