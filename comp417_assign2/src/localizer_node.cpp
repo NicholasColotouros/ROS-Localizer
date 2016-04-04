@@ -42,6 +42,7 @@ public:
   geometry_msgs::PoseStamped estimated_location;
 
   cv::Mat map_image;
+  cv::Mat current_camera_image;
   cv::Mat ground_truth_image;
   cv::Mat localization_result_image;
 
@@ -74,7 +75,8 @@ public:
   // Compare two pixels by returning the distance from the rgb
   double comparePixels( const cv::Vec3b A, const cv::Vec3b B )
   {
-    return pow(A[0]-B[0], 2) + pow(A[1]-B[1], 2) + pow(A[2]-B[2], 2);
+    double ret = pow(A[0]-B[0], 2) + pow(A[1]-B[1], 2) + pow(A[2]-B[2], 2);
+    return ret;
   }
 
   void robotImageCallback( const sensor_msgs::ImageConstPtr& robot_img )
@@ -91,10 +93,10 @@ public:
      {
        for(int y = 0; y < map_image.rows; y++)
        {
-         cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(x,y);
+         cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
          if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
          {
-           draw_point(x, y);
+           draw_point(x,y);
          }
        }
      }
@@ -145,8 +147,8 @@ public:
     int estimated_heading_image_y = estimated_robo_image_y + HEADING_GRAPHIC_LENGTH * sin(-target_yaw);
 
     // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
-    cv::circle( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
-    cv::line( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
+    //cv::circle( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
+    //cv::line( localization_result_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
   }
 
   // This is a provided convenience function that allows you to compare your localization result to a ground truth path
