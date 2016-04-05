@@ -15,8 +15,8 @@
 #define HEADING_GRAPHIC_LENGTH 50.0
 
 // My constants
-#define NUM_PARTICLES 25000
-#define RGB_DISTANCE 1
+#define NUM_PARTICLES 250
+#define RGB_DISTANCE 4
 
 // Class Localizer is a sample stub that you can build upon for your implementation
 // (advised but optional: starting from scratch is also fine)
@@ -32,6 +32,7 @@ public:
     double weight;
   };
   std::vector<Particle> particles;
+  std::vector<Particle> particles_old;
 
   ros::NodeHandle nh;
   image_transport::Publisher pub;
@@ -42,6 +43,7 @@ public:
   geometry_msgs::PoseStamped estimated_location;
   int estimated_x_pixels;
   int estimated_y_pixels;
+  bool needsToObserve; // Determines if the observation phase needs to happen
 
   cv::Mat map_image;
   cv::Mat current_camera_image;
@@ -66,13 +68,13 @@ public:
     estimated_location.pose.position.x = 0;
     estimated_location.pose.position.y = 0;
 
-    estimated_x_pixels = adjust_x_meters(localization_line_image.size().width/2, 0);
+    estimated_x_pixels = adjust_x_meters(localization_line_image.size().width/2, 0); // TODO this should only be applied when rendering the pixels -- move to draw
     estimated_y_pixels = adjust_y_meters(localization_line_image.size().height/2, 0);
 
     // Initialize particles around the origin
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(0.0,10.0);
-    std::normal_distribution<double> angle_distribution(0.0,0.26); //-15 to +15 degrees
+    std::normal_distribution<double> angle_distribution(0.0,0.26); //-15 to +15 degrees TODO TEST that this is set -- struct madness
     for(int i = 0; i < NUM_PARTICLES; i++)
     {
       particles.push_back(Particle());
@@ -88,6 +90,7 @@ public:
 
     ROS_INFO("localizer node constructed and subscribed.");
   }
+
 
   // Draws a point in green with radius 5
   void draw_point(int x, int y)
@@ -129,35 +132,93 @@ public:
     return ret;
   }
 
-  void robotImageCallback( const sensor_msgs::ImageConstPtr& robot_img )
+  // Intended to be used by the kidnapped robot problem before deciiding it would be too long to do in full -- need to work on the project.
+  // Basically instead of putting all of the particles around the start point like in the localization problem, we take the first scanned image
+  // and compare it to every pixel on the map and keep the most similar ones. Right now it just draws those points but the plan was to make a
+  // list of these points and evenly distribute particles around all of the points, and that would create our initial state
+  //
+  // If you actually call this it works surpriginly well.
+  void kidnapped_find_similar()
   {
-    // TODO: You must fill in the code here to implement an observation model for your localizer
-    //ROS_INFO( "Got image callback." );
-    draw_particles();
-    // localization_result_image = localization_line_image.clone();
-    //
-    // current_camera_image = cv_bridge::toCvShare(robot_img, "bgr8")->image;
-    // int rows = current_camera_image.rows;
-    // int cols = current_camera_image.cols;
-    // cv::Vec3b centerPixelRobo = current_camera_image.at<cv::Vec3b>(rows/2,cols/2);
-    //
-    // // Find all "close enough" points
-    //  for(int x = 0; x < map_image.cols; x++)
-    //  {
-    //    for(int y = 0; y < map_image.rows; y++)
-    //    {
-    //      cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
-    //      if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
-    //      {
-    //        draw_point(x,y);
-    //      }
-    //    }
-    //  }
+    cv::Mat cam_image = current_camera_image.clone();
+
+    int rows = cam_image.rows;
+    int cols = cam_image.cols;
+    cv::Vec3b centerPixelRobo = cam_image.at<cv::Vec3b>(rows/2,cols/2);
+
+    // Find all "close enough" points
+    for(int x = 0; x < map_image.cols; x++)
+    {
+      for(int y = 0; y < map_image.rows; y++)
+      {
+        cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
+        if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
+        {
+          draw_point(x,y);
+        }
+      }
+    }
   }
 
+  // Since we can't synchronize the callbacks, we just update the current camera image so that the motion model can handle it
+  void robotImageCallback( const sensor_msgs::ImageConstPtr& robot_img )
+  {
+    current_camera_image = cv_bridge::toCvShare(robot_img, "bgr8")->image;
+  }
+
+  // Called by the motion callback
+  // Assigns weights based on the last observed image
+  void updateObservation() // TODO: test to make sure weights are actually set -- struct madness
+  {
+    cv::Mat cam_image = current_camera_image.clone();
+
+    int rows = cam_image.rows;
+    int cols = cam_image.cols;
+    cv::Vec3b centerPixelRobo = cam_image.at<cv::Vec3b>(rows/2,cols/2);
+
+    for(int i = 0; i < NUM_PARTICLES; i++)
+    {
+      // Get the current pixel of the particle and compare it with the read pixel in the camera
+      cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(particles[i].y, particles[i].x); // Image matrix -- use y then x
+      double pixeldiff = comparePixels(currentPixelMap, centerPixelRobo);
+
+      // Assign weights based on how well it matches
+      if(pixeldiff <= RGB_DISTANCE) particles[i].weight = 1;
+      else if(pixeldiff <= RGB_DISTANCE * 10) particles[i].weight = 0.5;
+      else particles[i].weight = 0;
+    }
+  }
+
+  // Resamples new particles based on the weights of the current particles
+  // Then it reorganizes the lists so that the particles placed particles have equal weights in the particles variable
+  // and the others are in the particles_old variable
+  void resample()
+  {
+    // TODO: hue
+  }
+
+  // Propagates the pixels based on the estimated_x_pixels and estimated_robo_image_y pixels
+  void propagate()
+  {
+    // TODO
+  }
+
+  // Where the entirety of the particle filter is applied. The following steps are done:
+  // 1) Update the observation model
+  // 2) Resample the particles based on observations
+  // 3) Propagate the particles based on the movement from the command
+  // The published image is the end result of the particles after step 3
   void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command )
   {
     //ROS_INFO( "Got motion callback." );
+    updateObservation();
+    resample();
+
+    // TODO somehow estimate some things based on movement and then call propagate()
+    // Then draw the things and offset only the draw points by the camera offset
+    // The reason we only draw them offset is because we're always comparing the particles with the camera, so we're estimating based on the camera
+    // but the assignment wants us to guess where the robot is, which is an offset away.
+
     geometry_msgs::PoseStamped command = *motion_command;
     double target_roll, target_pitch, target_yaw;
     tf::Quaternion target_orientation;
@@ -170,9 +231,10 @@ public:
     estimated_location.pose.orientation = command.pose.orientation;
 
     // The remainder of this function is sample drawing code to plot your answer on the map image.
+    draw_particles();
 
     /*********************************************************/
-    // DRAW THE GROUND (BLUE) TRUTH AND OUR ESTIMATED (RED)  //
+    // DRAW THE GROUND (BLUE) TRUTH AND OUR ESTIMATED (RED)  // for debugging purposes, remove for
     /*********************************************************/
     localization_line_image = ground_truth_image.clone(); // you either get a red line or a red point + bluie line. no superimposed paths
 
