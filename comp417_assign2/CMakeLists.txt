@@ -10,7 +10,7 @@ find_package(catkin REQUIRED cv_bridge genmsg image_transport sensor_msgs geomet
 # find_package(Boost REQUIRED COMPONENTS system)
 
 catkin_package()
-add_definitions(-std=c++11)
+add_definitions(-std=c++11 -g)
 find_package(OpenCV)
 
 add_executable(ground_truth_publisher src/ground_truth_publisher.cpp)

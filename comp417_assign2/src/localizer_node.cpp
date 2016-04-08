@@ -5,6 +5,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_listener.h>
 
+#include <algorithm>
 #include <cmath>
 #include <stdlib.h>
 
@@ -15,8 +16,10 @@
 #define HEADING_GRAPHIC_LENGTH 50.0
 
 // My constants
-#define NUM_PARTICLES 250
-#define RGB_DISTANCE 4
+#define NUM_PARTICLES 1000
+#define RGB_DISTANCE 20
+
+#define KIDNAPPED 0 // 1 if kidnapped robot problem, 0 if localization and starting at (0,0)
 
 // Class Localizer is a sample stub that you can build upon for your implementation
 // (advised but optional: starting from scratch is also fine)
@@ -32,7 +35,6 @@ public:
     double weight;
   };
   std::vector<Particle> particles;
-  std::vector<Particle> particles_old;
 
   ros::NodeHandle nh;
   image_transport::Publisher pub;
@@ -43,7 +45,7 @@ public:
   geometry_msgs::PoseStamped estimated_location;
   int estimated_x_pixels;
   int estimated_y_pixels;
-  bool needsToObserve; // Determines if the observation phase needs to happen
+  int estimated_angle;
 
   cv::Mat map_image;
   cv::Mat current_camera_image;
@@ -51,6 +53,8 @@ public:
   cv::Mat localization_result_image;
   cv::Mat localization_line_image; // Used so that we can refresh the particles each frame
 
+  // RNG stuff
+  std::default_random_engine generator;
 
 
   Localizer( int argc, char** argv )
@@ -64,55 +68,68 @@ public:
     localization_line_image = map_image.clone();
     ground_truth_image = map_image.clone();
 
-    // position in meters
-    estimated_location.pose.position.x = 0;
-    estimated_location.pose.position.y = 0;
-
-    estimated_x_pixels = adjust_x_meters(localization_line_image.size().width/2, 0); // TODO this should only be applied when rendering the pixels -- move to draw
-    estimated_y_pixels = adjust_y_meters(localization_line_image.size().height/2, 0);
-
-    // Initialize particles around the origin
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0.0,10.0);
-    std::normal_distribution<double> angle_distribution(0.0,0.26); //-15 to +15 degrees TODO TEST that this is set -- struct madness
-    for(int i = 0; i < NUM_PARTICLES; i++)
+    if(KIDNAPPED == 1)
     {
-      particles.push_back(Particle());
-      particles[i].x = estimated_x_pixels + std::roundl(distribution(generator));
-      particles[i].y = estimated_y_pixels + std::roundl(distribution(generator));
-      particles[i].theta = angle_distribution(generator);
-      particles[i].weight = 1;
+      // TODO: kidnapped initialization
     }
+    else // Localization starting at 0,0 initialization
+    {
+      // position in meters
+      estimated_location.pose.position.x = 0;
+      estimated_location.pose.position.y = 0;
 
-    gt_img_sub = it.subscribe("/assign2/ground_truth_image", 1, &Localizer::groundTruthImageCallback, this);
-    robot_img_sub = it.subscribe("/aqua/back_down/image_raw", 1, &Localizer::robotImageCallback, this);
-    motion_command_sub = nh.subscribe<geometry_msgs::PoseStamped>("/aqua/target_pose", 1, &Localizer::motionCommandCallback, this);
 
-    ROS_INFO("localizer node constructed and subscribed.");
+      // 0,0 in real coordinates == center image in pixels
+      estimated_x_pixels = localization_line_image.size().width/2;
+      estimated_y_pixels = localization_line_image.size().height/2;
+
+      // Initialize particles around the (0,0)
+      std::normal_distribution<double> distribution(0.0,10.0);
+      std::normal_distribution<double> angle_distribution(0.0,0.26);
+      
+      for(int i = 0; i < NUM_PARTICLES; i++)
+      {
+        particles.push_back(Particle());
+        particles[i].x = estimated_x_pixels + std::roundl(distribution(generator));
+        particles[i].y = estimated_y_pixels + std::roundl(distribution(generator));
+        particles[i].theta = angle_distribution(generator);
+        particles[i].weight = 1;
+      }
+
+      gt_img_sub = it.subscribe("/assign2/ground_truth_image", 1, &Localizer::groundTruthImageCallback, this);
+      robot_img_sub = it.subscribe("/aqua/back_down/image_raw", 1, &Localizer::robotImageCallback, this);
+      motion_command_sub = nh.subscribe<geometry_msgs::PoseStamped>("/aqua/target_pose", 1, &Localizer::motionCommandCallback, this);
+
+      ROS_INFO("localizer node constructed and subscribed.");
+    }
   }
 
 
-  // Draws a point in green with radius 5
-  void draw_point(int x, int y)
+  // Draws a point in green
+  void drawPoint(int x, int y)
   {
     double radius = 5.0;
     cv::circle(localization_result_image, cv::Point(x, y), radius, CV_RGB(0,250,0), -1);
   }
 
   // duplicates the line image and draws the particles on the published image
-  void draw_particles()
+  // since our estimate is where the camera is, we apply an offset to account for where the robot actually is
+  void drawParticles()
   {
     localization_result_image = localization_line_image.clone();
     for(int i = 0; i < NUM_PARTICLES; i++)
     {
-      draw_point(particles[i].x, particles[i].y);
+      double x = adjustXPixels(particles[i].x, particles[i].theta);
+      double y = adjustYPixels(particles[i].y, particles[i].theta);
+
+      drawPoint(x, y);
     }
   }
 
   // Returns the x pixel coordinate adjusted for the length of the camera according to the provided yaw
   // x_pixels: the x location of the camera center, in pixels
   // returns: the x location of the center of the robot in pixels
-  int adjust_x_meters(double x_pixels, double yaw)
+  int adjustXPixels(double x_pixels, double yaw)
   {
     return x_pixels + std::roundl(METRE_TO_PIXEL_SCALE * cos( yaw ) * -0.32);
   }
@@ -120,7 +137,7 @@ public:
   // Returns the y pixel coordinate adjusted for the length of the camera according to the provided yaw
   // y_pixels: the y location of the camera center, in pixels
   // returns: the y location of the center of the robot in pixels
-  int adjust_y_meters(double y_pixels, double yaw)
+  int adjustYPixels(double y_pixels, double yaw)
   {
     return y_pixels + std::roundl(METRE_TO_PIXEL_SCALE * sin( -yaw ) * -0.32);
   }
@@ -129,7 +146,7 @@ public:
   double comparePixels( const cv::Vec3b A, const cv::Vec3b B )
   {
     double ret = pow(A[0]-B[0], 2) + pow(A[1]-B[1], 2) + pow(A[2]-B[2], 2);
-    return ret;
+    return (1/(sqrt (ret)+1));
   }
 
   // Intended to be used by the kidnapped robot problem before deciiding it would be too long to do in full -- need to work on the project.
@@ -138,7 +155,7 @@ public:
   // list of these points and evenly distribute particles around all of the points, and that would create our initial state
   //
   // If you actually call this it works surpriginly well.
-  void kidnapped_find_similar()
+  void kidnappedFindSimilar()
   {
     cv::Mat cam_image = current_camera_image.clone();
 
@@ -154,7 +171,7 @@ public:
         cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(y,x); // Image matrix -- use y then x
         if(comparePixels(currentPixelMap, centerPixelRobo) <= RGB_DISTANCE)
         {
-          draw_point(x,y);
+          drawPoint(x,y);
         }
       }
     }
@@ -167,58 +184,83 @@ public:
   }
 
   // Called by the motion callback
-  // Assigns weights based on the last observed image
-  void updateObservation() // TODO: test to make sure weights are actually set -- struct madness
+  // Assigns weights based on the last observed image and last guessed position
+  void updateObservation(double lastX, double lastY)
   {
     cv::Mat cam_image = current_camera_image.clone();
-
+   
     int rows = cam_image.rows;
     int cols = cam_image.cols;
+   
     cv::Vec3b centerPixelRobo = cam_image.at<cv::Vec3b>(rows/2,cols/2);
-
     for(int i = 0; i < NUM_PARTICLES; i++)
     {
       // Get the current pixel of the particle and compare it with the read pixel in the camera
       cv::Vec3b currentPixelMap = map_image.at<cv::Vec3b>(particles[i].y, particles[i].x); // Image matrix -- use y then x
       double pixeldiff = comparePixels(currentPixelMap, centerPixelRobo);
 
-      // Assign weights based on how well it matches
-      if(pixeldiff <= RGB_DISTANCE) particles[i].weight = 1;
-      else if(pixeldiff <= RGB_DISTANCE * 10) particles[i].weight = 0.5;
-      else particles[i].weight = 0;
+      // Assign the weight based on the distance from the previously guessed position and how close the matching is
+      double posX = 1-1/2*(std::abs(estimated_x_pixels - particles[i].x - lastX + 1));
+      double posY = 1-1/2*(std::abs(estimated_y_pixels - particles[i].y - lastY + 1));
+
+      particles[i].weight = pixeldiff*0.9 +posX + posY;
     }
   }
+
+  // Comparator for sorting by weight
+  bool static compareByWeight(const Particle &a, const Particle &b)
+  {
+    return a.weight > b.weight;
+  }
+
 
   // Resamples new particles based on the weights of the current particles
   // Then it reorganizes the lists so that the particles placed particles have equal weights in the particles variable
   // and the others are in the particles_old variable
-  void resample()
+  // Propagates the pixels based on the estimated_x_pixels and estimated_robo_image_y pixels
+  // This is done in one step as opposed to two to minimize the number of particle iterations
+  // Drawing the particles is also done at this step to further minimize iterations and improve performance
+  void resampleAndPropagate(double guessX, double guessY)
   {
-    // TODO: hue
+    std::normal_distribution<double> distribution(0.0,10.0);
+    std::normal_distribution<double> angle_distribution(0.0,0.26); //-15 to +15 degrees
+    std::exponential_distribution<double> exp_distribution(0.1);
+
+    std::sort(particles.begin(), particles.end(), compareByWeight);
+    std::vector<Particle> oldParticles (particles);
+    
+    localization_result_image = localization_line_image.clone();
+    for (int i = 0; i < NUM_PARTICLES; i++)
+    {
+      int index =  std::roundl(exp_distribution (generator));
+      particles[i] = oldParticles[index];
+      particles[i].weight = 1; // Resampled particles all have equal weight
+      particles[i].x = oldParticles[index].x + std::roundl(distribution(generator)) + (guessX);
+      particles[i].y = oldParticles[index].y + std::roundl(distribution(generator)) + (guessY);
+      particles[i].theta = angle_distribution(generator);
+      drawPoint(particles[i].x,particles[i].y);
+    }
   }
 
-  // Propagates the pixels based on the estimated_x_pixels and estimated_robo_image_y pixels
-  void propagate()
+  // Uses the best particle as the belief
+  // Draws the point on the map in purple
+  void drawBelief()
   {
-    // TODO
+    estimated_x_pixels = particles[0].x;
+    estimated_y_pixels = particles[0].y;
+    double radius = 15.0;
+    cv::circle(localization_result_image, cv::Point(estimated_x_pixels, estimated_y_pixels), radius, CV_RGB(250,0,250), -1);
   }
 
   // Where the entirety of the particle filter is applied. The following steps are done:
   // 1) Update the observation model
   // 2) Resample the particles based on observations
   // 3) Propagate the particles based on the movement from the command
+  // 2 and 3 are done at the same time to minimize iterations
   // The published image is the end result of the particles after step 3
-  void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command )
+  void motionCommandCallback(const geometry_msgs::PoseStamped::ConstPtr& motion_command)
   {
-    //ROS_INFO( "Got motion callback." );
-    updateObservation();
-    resample();
-
-    // TODO somehow estimate some things based on movement and then call propagate()
-    // Then draw the things and offset only the draw points by the camera offset
-    // The reason we only draw them offset is because we're always comparing the particles with the camera, so we're estimating based on the camera
-    // but the assignment wants us to guess where the robot is, which is an offset away.
-
+    // the originally provided motion model
     geometry_msgs::PoseStamped command = *motion_command;
     double target_roll, target_pitch, target_yaw;
     tf::Quaternion target_orientation;
@@ -229,13 +271,19 @@ public:
     estimated_location.pose.position.x = estimated_location.pose.position.x + FORWARD_SWIM_SPEED_SCALING * command.pose.position.x * cos( -target_yaw );
     estimated_location.pose.position.y = estimated_location.pose.position.y + FORWARD_SWIM_SPEED_SCALING * command.pose.position.x * sin( -target_yaw );
     estimated_location.pose.orientation = command.pose.orientation;
+    
+    double estimatedX = FORWARD_SWIM_SPEED_SCALING * cos( -target_yaw )*METRE_TO_PIXEL_SCALE;
+    double estimatedY = FORWARD_SWIM_SPEED_SCALING *  sin( -target_yaw )*METRE_TO_PIXEL_SCALE;
+    
+    updateObservation(estimatedX, estimatedY);
+    resampleAndPropagate(estimatedX, estimatedY);
+    drawBelief();
 
     // The remainder of this function is sample drawing code to plot your answer on the map image.
-    draw_particles();
 
-    /*********************************************************/
-    // DRAW THE GROUND (BLUE) TRUTH AND OUR ESTIMATED (RED)  // for debugging purposes, remove for
-    /*********************************************************/
+    /************************************************************/
+    // DRAW THE GROUND (BLUE) TRUTH AND OUR MOTION MODEL (RED)  //
+    /************************************************************/
     localization_line_image = ground_truth_image.clone(); // you either get a red line or a red point + bluie line. no superimposed paths
 
     int estimated_robo_image_x = localization_line_image.size().width/2 + METRE_TO_PIXEL_SCALE * estimated_location.pose.position.x;
@@ -247,6 +295,7 @@ public:
     // ROS_INFO( "Ground truth image point at %d, %d", estimated_robo_image_x, estimated_robo_image_y);
     cv::circle( localization_line_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), POSITION_GRAPHIC_RADIUS, CV_RGB(250,0,0), -1);
     cv::line( localization_line_image, cv::Point(estimated_robo_image_x, estimated_robo_image_y), cv::Point(estimated_heading_image_x, estimated_heading_image_y), CV_RGB(250,0,0), 10);
+
   }
 
   // This is a provided convenience function that allows you to compare your localization result to a ground truth path
